@@ -59,6 +59,26 @@ def reduce_angle(x: float) -> float:
     return x
 
 
+
+# f0 = b0 ; mic = 10−12 ;
+# if (f0 = 0) then f0 = mic ;
+# C0 = f0 ;
+# D0 = 0 ;
+# j = 1 ;
+
+# do
+# Dj = bj + ajDj−1 ;
+# if (Dj = 0) then Dj = mic ;
+# Cj = bj + aj / Cj−1
+
+# if (Cj = 0) then Cj = mic ;
+# Dj = 1 / Dj
+# ∆j = Cj Dj
+# fj = ∆j fj−1 ;
+# j = j + 1 ;
+# while (|∆j − 1| ≥ ϵ) ;
+
+
 # 1. Metoda Lentz
 def my_tan_lentz(x: float, epsilon: float = 1e-10) -> float:
     x = reduce_angle(x)
@@ -77,7 +97,6 @@ def my_tan_lentz(x: float, epsilon: float = 1e-10) -> float:
 
     j = 1
 
-    # Emulating C++ do-while loop
     while True:
         a = x if j == 1 else -(x * x)
         b = 2 * j - 1
@@ -142,11 +161,9 @@ def my_tan_poly(x: float) -> float:
 
 # 3. Testarea pe 10.000 de numere
 def test_performance() -> None:
-    # Evitam extremele exact
     lower_bound = -math.pi / 2.0 + 0.001
     upper_bound = math.pi / 2.0 - 0.001
 
-    # List comprehension replaces the loop and vector pre-allocation
     values: List[float] = [random.uniform(lower_bound, upper_bound) for _ in range(10000)]
 
     err_lentz = 0.0
