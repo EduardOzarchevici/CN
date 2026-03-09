@@ -44,7 +44,7 @@ def find_non_associative_numbers() -> None:
     print(f"z = {z}")
 
     if inmultire1 != inmultire2:
-        print("\nDemonstratie finalizata. Operatia NU este asociativa:")
+        print("\nDemonstratie finalizata. Operatia NU este asociativa:") 
         print(f"(x * y) * z = {inmultire1}")
         print(f"x * (y * z) = {inmultire2}")
 
