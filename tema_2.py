@@ -8,13 +8,13 @@ eps = 1e-9 # Precision for calculations
 
 B = np.random.randn(n, n)
 
-A = np.dot(B, B.T) + np.eye(n) 
+A = np.dot(B, B.T) 
 
 b = np.random.randn(n) 
 
 # LIBRARY SOLUTION
 
-P, L_lib, U_lib = la.lu(A) # type: ignore
+# P, L_lib, U_lib = la.lu(A) # type: ignore
 x_lib = np.linalg.solve(A, b)
 
 print("Library solution x_lib computed successfully.\n")
@@ -50,13 +50,13 @@ for p in range(n):
 print("LDL^T Decomposition completed (Matrix A overwritten).\n")
 
 
-# --- 4. CALCULATING THE DETERMINANT ---
+# CALCULATING THE DETERMINANT
 
 # det(A) = det(L) * det(D) * det(L^T). Since det(L) = 1, det(A) is just the product of d.
 det_A = np.prod(d)
 print(f"Determinant of A: {det_A}\n")
 
-# --- 5. SOLVING THE SYSTEM USING SUBSTITUTION ---
+# SOLVING THE SYSTEM USING SUBSTITUTION
 
 # L has 1s on the diagonal (implicitly).
 # Calculate z from L (lower triangular)
@@ -67,26 +67,26 @@ for i in range(n):
         sum_z += A[i, j] * z[j] # A[i, j] contains L elements here
     z[i] = b[i] - sum_z
 
-# Step 5.2: Diagonal Solve -> D * y = z (Page 2)
+# Solve -> D * y = z (Page 2)
 # Compute y by dividing z by d, with an epsilon check to prevent division by zero
 y = np.zeros(n)
 for i in range(n):
     if abs(d[i]) > eps:
         y[i] = z[i] / d[i]
 
-# Step 5.3: Backward Substitution -> L^T * x = y (Equation 7, Page 6)
+# Backward Substitution -> L^T * x = y 
 # L^T has 1s on the diagonal. L^T_ij is L_ji, which is stored in A[j, i].
 x_chol = np.zeros(n)
 for i in range(n - 1, -1, -1):
     sum_x = 0.0
     for j in range(i + 1, n):
-        sum_x += A[j, i] * x_chol[j] # Transposed access: A[j, i] instead of A[i, j]
+        sum_x += A[j, i] * x_chol[j] #A[j, i] instead of A[i, j]
     x_chol[i] = y[i] - sum_x
 
 print("System solved. x_chol computed.\n")
 
 
-# --- 6. CUSTOM MATRIX-VECTOR MULTIPLICATION (A^init * x_chol) ---
+# MATRIX-VECTOR MULTIPLICATION (A^init * x_chol)
 
 # Compute A * x 
 A_init_x = np.zeros(n)
@@ -103,13 +103,13 @@ for i in range(n):
     A_init_x[i] = sum_ax
 
 
-# --- 7. VERIFICATION (NORMS) ---
+# VERIFICATION (NORMS) 
 
 # Calculate Euclidean norms (L2 norms)
 norm1 = np.linalg.norm(A_init_x - b, ord=2)
 norm2 = np.linalg.norm(x_chol - x_lib, ord=2)
 
-print("--- VERIFICATION ---")
+print("VERIFICATION")
 print(f"||A^init * x_chol - b||_2 : {norm1}")
 print(f"||x_chol - x_lib||_2      : {norm2}")
 
