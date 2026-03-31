@@ -3,7 +3,7 @@ import scipy.linalg as la
 
 # SETUP
 
-n = 150 # System dimension (can be tested with sizes > 100)
+n = 120 # System dimension (can be tested with sizes > 100)
 eps = 1e-9 # Precision for calculations
 
 B = np.random.randn(n, n)
@@ -55,7 +55,6 @@ print("LDL^T Decomposition completed (Matrix A overwritten).\n")
 # det(A) = det(L) * det(D) * det(L^T). Since det(L) = 1, det(A) is just the product of d.
 det_A = np.prod(d)
 print(f"Determinant of A: {det_A}\n")
-
 # SOLVING THE SYSTEM USING SUBSTITUTION
 
 # L has 1s on the diagonal (implicitly).
@@ -73,6 +72,8 @@ y = np.zeros(n)
 for i in range(n):
     if abs(d[i]) > eps:
         y[i] = z[i] / d[i]
+    else:
+        break
 
 # Backward Substitution -> L^T * x = y 
 # L^T has 1s on the diagonal. L^T_ij is L_ji, which is stored in A[j, i].
