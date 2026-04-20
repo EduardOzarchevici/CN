@@ -90,7 +90,7 @@ def solve_sparse_system(prefix, epsilon=1e-8, max_iter=10000):
             print(f"x[{i}] = {x_curr[i]:.5f}")
 
     elif dx_norm > 1e10:
-        print("Algorithm diverged! [cite: 106]")
+        print("Algorithm diverged!")
     else:
         print("Hit maximum iterations without converging.")
     print("-" * 30)
