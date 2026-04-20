@@ -1,123 +1,108 @@
-import math
+import numpy as np
 
-# Helper function to read a list of floats from a text file
-def read_vector(filename):
-    try:
-        with open(filename, 'r') as f:
-            # Read all lines, split by whitespace, and convert to floats
-            return [float(word) for line in f for word in line.split()]
-    except FileNotFoundError:
-        print(f"Error: Could not find {filename}")
-        return []
+def householder(A, eps=1e-8):
+    # Descompunere QR cu Householder
+    n = A.shape[0]
+    R = A.copy()
+    Qt = np.eye(n)
 
-def solve_sparse_system(prefix, epsilon=1e-8, max_iter=10000):
-    # 1. Read the input files
-    d0 = read_vector(f"d0_{prefix}.txt")
-    d1 = read_vector(f"d1_{prefix}.txt")
-    d2 = read_vector(f"d2_{prefix}.txt")
-    b = read_vector(f"b_{prefix}.txt")
+    for r in range(n - 1):
+        sigma = np.sum(R[r:, r]**2)
+        if sigma <= eps: 
+            continue
 
-    if not d0 or not d1 or not d2 or not b:
-        return
+        k = np.sqrt(sigma)
+        if R[r, r] > 0: 
+            k = -k
 
-    # 2. Calculate system dimensions and offsets
-    n = len(d0)
+        beta = sigma - k * R[r, r]
+        
+        u = np.zeros(n)
+        u[r] = R[r, r] - k
+        u[r+1:] = R[r+1:, r]
 
-    # The sizes of d1 and d2 are x+1 and y+1.
-    # Therefore: p = n - (x + 1) and q = n - (y + 1)
-    p = n - len(d1)
-    q = n - len(d2)
+        # Transformare R
+        for j in range(r + 1, n):
+            gamma = np.dot(u[r:], R[r:, j]) / beta
+            R[r:, j] -= gamma * u[r:]
 
-    print(f"--- System {prefix} ---")
-    print(f"Dimension n: {n}, Offset p: {p}, Offset q: {q}")
+        R[r, r] = k
+        R[r+1:, r] = 0
 
-    # 3. Verify that all elements on the main diagonal are non-zero
-    for i in range(n):
-        if abs(d0[i]) <= epsilon:
-            print(f"Error: Zero found on main diagonal at index {i}. Cannot use Gauss-Seidel.")
-            return
+        # Transformare Qt
+        for j in range(n):
+            gamma = np.dot(u[r:], Qt[r:, j]) / beta
+            Qt[r:, j] -= gamma * u[r:]
 
-    # 4. Gauss-Seidel Algorithm Implementation
-    x_curr = [0.0] * n  # Current guess, initialized to 0
-    x_prev = [0.0] * n  # Previous guess
+    return Qt, R
 
-    k = 0
-    dx_norm = 0.0
+def solve_triangular(R, b, eps=1e-8):
+    # Substitutie inversa
+    n = len(b)
+    x = np.zeros(n)
+    
+    for i in range(n - 1, -1, -1):
+        if abs(R[i, i]) <= eps:
+            raise ValueError("Matrice singulara!")
+        # Folosim np.dot pentru un calcul mai scurt si rapid
+        x[i] = (b[i] - np.dot(R[i, i+1:], x[i+1:])) / R[i, i]
+        
+    return x
 
-    while k <= max_iter:
-        # Copy current to previous for the new iteration
-        x_prev = x_curr[:]
-        dx_norm = 0.0
+def main():
+    # C6: Initializare random
+    n = 5 
+    eps = 1e-8
+    np.random.seed(42)
+    
+    A = np.random.rand(n, n) * 10
+    s = np.random.rand(n) * 10
+    
+    print(f"Dimensiune sistem: n = {n}\n")
 
-        for i in range(n):
-            sum_ax = 0.0
+    # C1: Calcul vector b
+    b = A @ s
 
-            # Lower diagonal p (uses newly calculated x_curr)
-            if i >= p:
-                sum_ax += d1[i - p] * x_curr[i - p]
-            # Upper diagonal p (uses older x_prev)
-            if i + p < n:
-                sum_ax += d1[i] * x_prev[i + p]
-            # Lower diagonal q (uses newly calculated x_curr)
-            if i >= q:
-                sum_ax += d2[i - q] * x_curr[i - q]
-            # Upper diagonal q (uses older x_prev)
-            if i + q < n:
-                sum_ax += d2[i] * x_prev[i + q]
+    # C2: Algoritmul Householder
+    Qt, R = householder(A, eps)
 
-            # Apply the Gauss-Seidel formula
-            x_curr[i] = (b[i] - sum_ax) / d0[i]
+    # C3: Rezolvare sistem liniar
+    # Varianta NOASTRA (Householder)
+    x_hh = solve_triangular(R, Qt @ b, eps) 
+    
+    # Varianta BIBLIOTECA (Descompunere QR)
+    # Extragem Q_lib si R_lib folosind numpy.linalg.qr
+    Q_lib, R_lib = np.linalg.qr(A)
+    # Ax = b <=> Q_lib * R_lib * x = b <=> R_lib * x = Q_lib.T * b
+    # Putem folosi functia noastra solve_triangular pentru a gasi solutia
+    x_qr = solve_triangular(R_lib, Q_lib.T @ b, eps) 
+    
+    print(f"Norma ||x_QR - x_hh||: {np.linalg.norm(x_qr - x_hh):.5e}")
 
-            # Track the maximum difference (infinity norm)
-            diff = abs(x_curr[i] - x_prev[i])
-            if diff > dx_norm:
-                dx_norm = diff
+    # C4: Calcul erori
+    norm_s = np.linalg.norm(s)
+    
+    err1 = np.linalg.norm(A @ x_hh - b)
+    err2 = np.linalg.norm(A @ x_qr - b)
+    err3 = np.linalg.norm(x_hh - s) / norm_s
+    err4 = np.linalg.norm(x_qr - s) / norm_s
 
-        k += 1
+    print("\nErori (ar trebui sa fie < 10^-6):")
+    print(f"||A*x_hh - b||_2 = {err1:.5e}")
+    print(f"||A*x_QR - b||_2 = {err2:.5e}")
+    print(f"eroare relativa x_hh = {err3:.5e}")
+    print(f"eroare relativa x_QR = {err4:.5e}")
 
-        # Check stopping criteria
-        if dx_norm < epsilon or dx_norm > 1e10:
-            break
+    # C5: Inversa matricei
+    A_inv_hh = np.zeros((n, n))
+    for j in range(n):
+        # coloana j din inversa = solutia sistemului Rx = Qt * e_j
+        A_inv_hh[:, j] = solve_triangular(R, Qt[:, j], eps)
 
-    # 5 & 6. Validation and Error Calculation
-    if dx_norm < epsilon:
-        print(f"Solution approximated in {k} iterations.")
+    A_inv_lib = np.linalg.inv(A)
+    
+    inv_diff = np.linalg.norm(A_inv_hh - A_inv_lib)
+    print(f"\nNorma diferentei inverselor: {inv_diff:.5e}")
 
-        y = [0.0] * n
-        max_error = 0.0
-
-        # Calculate y = Ax in a single pass
-        for i in range(n):
-            y[i] = d0[i] * x_curr[i]
-
-            if i >= p:     y[i] += d1[i - p] * x_curr[i - p]
-            if i + p < n:  y[i] += d1[i] * x_curr[i + p]
-            if i >= q:     y[i] += d2[i - q] * x_curr[i - q]
-            if i + q < n:  y[i] += d2[i] * x_curr[i + q]
-
-            # Calculate infinity norm ||Ax_GS - b||
-            error = abs(y[i] - b[i])
-            if error > max_error:
-                max_error = error
-
-        print(f"Infinity Norm ||Ax_GS - b||: {max_error:e}")
-
-        # Print a sample to verify against PDF answers
-        print("Sample of solution x_GS (first 5 elements):")
-        for i in range(min(n, 5)):
-            print(f"x[{i}] = {x_curr[i]:.5f}")
-
-    elif dx_norm > 1e10:
-        print("Algorithm diverged!")
-    else:
-        print("Hit maximum iterations without converging.")
-    print("-" * 30)
-
-
-# Run the solver for the first dataset
 if __name__ == "__main__":
-    solve_sparse_system("1")
-    solve_sparse_system("2")
-    solve_sparse_system("3")
-    solve_sparse_system("4")
-    solve_sparse_system("5")
+    main()
