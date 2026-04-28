@@ -82,6 +82,7 @@ def olver_method(coeffs, der_coeffs, der2_coeffs, x0, epsilon, max_steps=1000):
         if abs(p_der_val) <= epsilon:
             return None, k
             
+        # Olver's specific correction factor (c_k)
         c_k = (p_val**2 * p_der2_val) / (p_der_val**3) 
         delta_x = (p_val / p_der_val) + 0.5 * c_k
         
@@ -101,6 +102,8 @@ def olver_method(coeffs, der_coeffs, der2_coeffs, x0, epsilon, max_steps=1000):
 
 def main():
     coeffs = [1.0, -6.0, 11.0, -6.0]
+    # coeffs = [1.0, -6.0, 13.0, -12.0, 4.0]
+    
     epsilon = 1e-6
     
     der1_coeffs = get_derivative_coeffs(coeffs)
@@ -122,13 +125,16 @@ def main():
         root_o, steps_o = olver_method(coeffs, der1_coeffs, der2_coeffs, x0, epsilon)
         
         if root_n is not None:
+            str_n = f"{root_n:10.6f} (in {steps_n:2} steps)"
+            str_o = f"{root_o:10.6f} (in {steps_o:2} steps)" if root_o is not None else "Failed"
+            print(f"{x0:16.4f} | {str_n:>25} | {str_o:>25}")
+
+
             if is_distinct(root_n, distinct_roots, epsilon):
                 distinct_roots.append(root_n)
                 
-                str_n = f"{root_n:10.6f} (in {steps_n:2} steps)"
-                str_o = f"{root_o:10.6f} (in {steps_o:2} steps)" if root_o is not None else "Failed"
                 
-                print(f"{x0:16.4f} | {str_n:>25} | {str_o:>25}")
+                
 
     distinct_roots.sort()
     
