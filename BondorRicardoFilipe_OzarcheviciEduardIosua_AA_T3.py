@@ -1,3 +1,17 @@
+# nume: Bondor
+# prenume: Ricardo Filipe
+# nr matricol: 310910401ESL231009
+# email: b.ryky.filipe@gmail.com
+# nume discord: Bondor Ricardo-Filipe 3E1
+
+# nume: Ozarchevici
+# prenume: Eduard-Iosua
+# email: iosuaozarchevici@gmail.com
+# nr matricol: 310910402ESL231055
+# nume discord: Ozarchevici Eduard-Iosua 3E1
+
+# procent AI: 100%
+
 import numpy as np
 
 def householder(A, eps=1e-8):

@@ -1,3 +1,17 @@
+# nume: Bondor
+# prenume: Ricardo Filipe
+# nr matricol: 310910401ESL231009
+# email: b.ryky.filipe@gmail.com
+# nume discord: Bondor Ricardo-Filipe 3E1
+
+# nume: Ozarchevici
+# prenume: Eduard-Iosua
+# email: iosuaozarchevici@gmail.com
+# nr matricol: 310910402ESL231055
+# nume discord: Ozarchevici Eduard-Iosua 3E1
+
+# procent AI: 100%
+
 import numpy as np
 import os
 
@@ -52,34 +66,51 @@ def jacobi_method(A, epsilon=1e-9, max_iter=1000):
             print(f"Converged after {k} iterations.")
             break
 
-        alpha = (A_k[p, p] - A_k[q, q]) / (2 * A_k[p, q])
+        alpha = (A_k[p, p] - A_k[q, q]) / (2 * A_k[p, q]) 
         sign_alpha = 1 if alpha >= 0 else -1
-        t = -alpha + sign_alpha * np.sqrt(alpha ** 2 + 1)
-        c = 1 / np.sqrt(1 + t ** 2)
-        s = t / np.sqrt(1 + t ** 2)
+        t = -alpha + sign_alpha * np.sqrt(alpha ** 2 + 1) #tangenta
+        c = 1 / np.sqrt(1 + t ** 2) # cos
+        s = t / np.sqrt(1 + t ** 2) # sin
+
+        # $A_{nou} = R_{pq}(\theta) * A_{vechi} * R_{pq}^T(\theta)$
 
         for j in range(n):
             if j != p and j != q:
                 a_pj = c * A_k[p, j] + s * A_k[q, j]
                 a_qj = -s * A_k[p, j] + c * A_k[q, j]
+
+                # pentru simetrie, actualizam ambele A[p, j] si A[j, p]
+
                 A_k[p, j] = A_k[j, p] = a_pj
                 A_k[q, j] = A_k[j, q] = a_qj
+
+        # actualizam elementele diagonale
 
         a_pp = A_k[p, p] + t * A_k[p, q]
         a_qq = A_k[q, q] - t * A_k[p, q]
 
         A_k[p, p] = a_pp
         A_k[q, q] = a_qq
+
+        # elementul pivot devine 0
         A_k[p, q] = A_k[q, p] = 0
 
+
+        # actualizam matricea U 
         for i in range(n):
             u_ip = c * U[i, p] + s * U[i, q]
             u_iq = -s * U[i, p] + c * U[i, q]
+
             U[i, p] = u_ip
             U[i, q] = u_iq
 
-    Lambda = np.diag(np.diag(A_k))
-    verification_norm = np.linalg.norm(A_init @ U - U @ Lambda)
+    print(A_k)
+
+    Lambda = np.diag(np.diag(A_k)) # valori proprii pe diagonala, restul 0
+
+    print(Lambda)
+    # $||A^{init}*U-U*\Lambda||$
+    verification_norm = np.linalg.norm(A_init @ U - U @ A_k)
     print("Eigenvalues (Diagonal of Lambda):", np.diag(Lambda))
     print(f"Verification Norm || A_init * U - U * Lambda ||: {verification_norm}")
 
@@ -120,16 +151,16 @@ def solve_svd_requirements(A):
     print(f"Singular Values: {SingularValues}")
 
     epsilon = 1e-9
-    rank_A = np.sum(SingularValues > epsilon)
+    rank_A = np.sum(SingularValues > 0)
     print(f"Rank of A: {rank_A}")
 
-    valid_sigmas = SingularValues[SingularValues > epsilon]
+    valid_sigmas = SingularValues[SingularValues > 0]
     if len(valid_sigmas) > 0:
         cond_A = valid_sigmas[0] / valid_sigmas[-1]
         print(f"Condition Number: {cond_A}")
 
     S_I = np.zeros((n, p))
-    for i in range(rank_A):
+    for i in range(int(rank_A)):
         S_I[i, i] = 1.0 / SingularValues[i]
     A_I = V @ S_I @ U.T
     print("\nMoore-Penrose Pseudoinverse (A^I):")
@@ -150,7 +181,7 @@ def solve_svd_requirements(A):
 # MAIN EXECUTION
 # ==========================================
 if __name__ == "__main__":
-    file_index = "1"
+    file_index = "5"
 
     print(f"Loading matrix from hw5_{file_index}.txt...")
     A = load_matrix_from_file(file_index)
